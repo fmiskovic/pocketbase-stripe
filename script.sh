@@ -14,7 +14,7 @@ if [[ -n "$DEVELOPMENT" ]]; then
     # stripe listen --print-secret --api-key "$STRIPE_SECRET_KEY" > secret.txt &
     # wait $!
     # nohup stripe listen --forward-to "http://0.0.0.0:8090/stripe" --api-key "$STRIPE_SECRET_KEY" --live > stripe.out 2>&1 &
-    nohup ./bin/app-amd64-linux serve --http "0.0.0.0:8090"
+    nohup ./bin/app serve --http "0.0.0.0:8090"
 # Serve Online
 elif [[ -n "$HOST" && -n "$STRIPE_SECRET_KEY" ]]; then
     echo "Serving Online..."
@@ -22,7 +22,7 @@ elif [[ -n "$HOST" && -n "$STRIPE_SECRET_KEY" ]]; then
     # wait $!
     # echo "WHSEC = $(<secret.txt)"
     # nohup stripe listen --forward-to "https://$HOST/stripe" --api-key "$STRIPE_SECRET_KEY" --live > stripe.out 2>&1 &
-    nohup ./bin/app-amd64-linux serve --http "0.0.0.0:8090"
+    nohup ./bin/app serve --http "0.0.0.0:8090"
 # Error
 else
     # Handle the case where the environment variables are not set

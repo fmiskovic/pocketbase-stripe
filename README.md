@@ -142,9 +142,11 @@ Here is my current build flow to upgrade and deploy the container to Google Arti
 
 `go get -u github.com/pocketbase/pocketbase`
 
-### Build Binary
+### Build Binary (Optional)
 
-`GOOS=linux GOARCH=amd64 go build -o bin/app-amd64-linux main.go`
+The Dockerfile builds the binary in a builder stage, so this step is only needed if you want a local build artifact.
+
+`GOOS=linux GOARCH=$(go env GOARCH) go build -o bin/app main.go`
 
 ### Build Image
 

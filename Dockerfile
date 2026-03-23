@@ -1,10 +1,22 @@
+# syntax=docker/dockerfile:1
 
-# Use the latest golang base image
-FROM golang:latest
+FROM golang:1.25-alpine AS builder
 
-
-# Set the Current Working Directory inside the container
 WORKDIR /app
+ARG TARGETOS
+ARG TARGETARCH
+
+COPY go.mod go.sum ./
+RUN go mod download
+
+COPY . .
+RUN GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-amd64} go build -trimpath -ldflags="-s -w" -o /out/app ./main.go
+
+FROM alpine:3.20
+
+WORKDIR /app
+RUN apk add --no-cache bash ca-certificates
+
 ARG STRIPE_SECRET_KEY=""
 ARG STRIPE_CANCEL_URL=""
 ARG STRIPE_SUCCESS_URL=""
@@ -14,8 +26,6 @@ ARG HOST=""
 ARG PORT="443"
 ARG DEVELOPMENT=""
 
-# Set Environment Variables
-ENV DEBIAN_FRONTEND=noninteractive
 ENV STRIPE_SECRET_KEY=${STRIPE_SECRET_KEY}
 ENV STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
 ENV STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
@@ -25,22 +35,12 @@ ENV HOST=${HOST}
 ENV PORT=${PORT}
 ENV DEVELOPMENT=${DEVELOPMENT}
 
-# Copy the source from the current directory to the Working Directory inside the container
-COPY . .
-
-# Build the Stripe Pipeline
-# RUN curl -s https://packages.stripe.dev/api/security/keypair/stripe-cli-gpg/public | gpg --dearmor | tee /usr/share/keyrings/stripe.gpg
-# RUN echo "deb [signed-by=/usr/share/keyrings/stripe.gpg] https://packages.stripe.dev/stripe-cli-debian-local stable main" | tee -a /etc/apt/sources.list.d/stripe.list
-# RUN apt-get update
-# RUN apt-get install stripe
-
-
-# Copy the script to the container
+COPY --from=builder /out/app /app/bin/app
 COPY ./script.sh /script.sh
+COPY ./hooks /app/hooks
+COPY ./pb_bootstrap /app/pb_bootstrap
+COPY ./stripe_bootstrap /app/stripe_bootstrap
 
-# Make the script executable
 RUN chmod +x /script.sh
 
-# Command to run the executable
 CMD ["/script.sh"]
-
